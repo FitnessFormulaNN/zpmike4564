@@ -25,7 +25,6 @@
         }
 
         .app { max-width: 500px; margin: 0 auto; }
-
         header { margin-top: 20px; margin-bottom: 40px; }
         .label-sm { font-size: 0.85em; text-transform: uppercase; letter-spacing: 2px; color: var(--secondary); margin-bottom: 10px; }
         
@@ -41,18 +40,23 @@
         }
 
         .row { 
-            display: flex; align-items: center; gap: 15px; 
+            display: flex; align-items: center; gap: 10px; 
             padding: 15px 0; border-bottom: 1px solid var(--border); 
         }
 
         input { 
             border: none; background: transparent; outline: none; 
-            font-size: 1.2em; color: var(--text);
-            padding: 5px 0;
+            font-size: 1.1em; color: var(--text);
+            padding: 8px 0;
+            width: 100%;
         }
+
+        /* Чтобы инпуты не "прыгали" при включении редактирования */
+        input:read-only { cursor: default; }
+        input:not(:read-only) { background: #f9f9f9; border-radius: 4px; padding-left: 5px; }
         
-        .in-amt-minus { width: 100px; font-weight: 600; color: var(--minus); }
-        .in-amt-plus { width: 100px; font-weight: 600; color: var(--plus); }
+        .in-amt-minus { width: 85px !important; font-weight: 600; color: var(--minus); }
+        .in-amt-plus { width: 85px !important; font-weight: 600; color: var(--plus); }
         .in-comm { flex-grow: 1; color: var(--secondary); font-weight: 400; font-size: 1em; }
 
         .controls { display: flex; gap: 12px; margin: 30px 0; }
@@ -70,10 +74,13 @@
         .result-label { font-size: 1.1em; font-weight: 500; }
         .result-val { font-size: 2.8em; font-weight: 600; letter-spacing: -1px; }
 
-        .btn-del { 
-            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            background: none; border: none; color: #ddd; font-size: 1.5em; cursor: pointer;
+        .row-btns { display: flex; gap: 5px; }
+        .btn-icon {
+            width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;
+            background: none; border: none; cursor: pointer; font-size: 1.2em;
         }
+        .btn-edit { color: #ccc; }
+        .btn-del { color: #eee; }
 
         .modal-overlay {
             position: fixed; inset: 0; background: var(--modal-bg); 
@@ -176,8 +183,8 @@
 
     window.addRow = (type) => {
         const div = renderRow('', '', type);
-        // При добавлении новой строки сразу включаем редактирование суммы
-        enableEdit(div.querySelector('input[type=number]'));
+        const amountInput = div.querySelector('input[type=number]');
+        enableEditRow(amountInput); // Сразу включаем редактирование при добавлении
     };
 
     function renderRow(amt, comm, type) {
@@ -185,20 +192,32 @@
         div.className = 'row';
         div.setAttribute('data-type', type);
         div.innerHTML = `
-            <input type="number" class="in-amt-${type}" value="${amt}" placeholder="0" readonly onclick="enableEdit(this)" onblur="disableEdit(this)" oninput="autoSave()" pattern="\\d*">
-            <input type="text" class="in-comm" value="${comm}" placeholder="${type === 'plus' ? 'За что?' : 'Комментарий'}" readonly onclick="enableEdit(this)" onblur="disableEdit(this)" oninput="autoSave()">
-            <button class="btn-del" onclick="this.parentElement.remove(); autoSave();">×</button>
+            <input type="number" class="in-amt-${type}" value="${amt}" placeholder="0" readonly oninput="autoSave()" pattern="\\d*">
+            <input type="text" class="in-comm" value="${comm}" placeholder="${type === 'plus' ? 'За что?' : 'Комментарий'}" readonly oninput="autoSave()">
+            <div class="row-btns">
+                <button class="btn-icon btn-edit" onclick="enableEditRow(this)">✎</button>
+                <button class="btn-icon btn-del" onclick="this.closest('.row').remove(); autoSave();">×</button>
+            </div>
         `;
         document.getElementById('list').appendChild(div);
         return div;
     }
 
-    window.enableEdit = (el) => { 
-        el.readOnly = false; 
-        el.focus(); 
-    };
-    window.disableEdit = (el) => { 
-        el.readOnly = true; 
+    // Включает редактирование обоих инпутов в строке
+    window.enableEditRow = (btnOrInput) => {
+        const row = btnOrInput.closest('.row');
+        const inputs = row.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.readOnly = false;
+            // Возвращаем в readonly при потере фокуса (blur)
+            input.onblur = () => { input.readOnly = true; };
+        });
+        // Фокус на тот элемент, который вызвал редактирование (или на первый инпут)
+        if (btnOrInput.tagName === 'INPUT') {
+            btnOrInput.focus();
+        } else {
+            inputs[0].focus();
+        }
     };
 
     window.autoSave = () => {
