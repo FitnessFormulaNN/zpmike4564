@@ -29,7 +29,6 @@
         header { margin-top: 20px; margin-bottom: 40px; }
         .label-sm { font-size: 0.85em; text-transform: uppercase; letter-spacing: 2px; color: var(--secondary); margin-bottom: 10px; }
         
-        /* Крупный размер ЗП */
         .main-val { 
             font-size: 4em; font-weight: 300; margin: 0; letter-spacing: -2px; 
             cursor: pointer; line-height: 1;
@@ -41,7 +40,6 @@
             font-size: 1.1em;
         }
 
-        /* Список строк */
         .row { 
             display: flex; align-items: center; gap: 15px; 
             padding: 15px 0; border-bottom: 1px solid var(--border); 
@@ -57,7 +55,6 @@
         .in-amt-plus { width: 100px; font-weight: 600; color: var(--plus); }
         .in-comm { flex-grow: 1; color: var(--secondary); font-weight: 400; font-size: 1em; }
 
-        /* Кнопки управления */
         .controls { display: flex; gap: 12px; margin: 30px 0; }
         .btn-action { 
             flex: 1; height: 60px; background: #fafafa; border: 1px solid #eee; 
@@ -66,7 +63,6 @@
         }
         .btn-action:active { transform: scale(0.96); background: #f0f0f0; }
 
-        /* Итоговый блок */
         footer { 
             margin-top: 40px; padding: 30px 0; border-top: 2px solid var(--text);
             display: flex; justify-content: space-between; align-items: center;
@@ -74,13 +70,11 @@
         .result-label { font-size: 1.1em; font-weight: 500; }
         .result-val { font-size: 2.8em; font-weight: 600; letter-spacing: -1px; }
 
-        /* Кнопка удаления */
         .btn-del { 
             width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
             background: none; border: none; color: #ddd; font-size: 1.5em; cursor: pointer;
         }
 
-        /* Мобильная модалка */
         .modal-overlay {
             position: fixed; inset: 0; background: var(--modal-bg); 
             display: none; flex-direction: column; justify-content: center; 
@@ -91,7 +85,6 @@
 
         #status { font-size: 0.8em; color: var(--secondary); text-align: center; margin-top: 20px; }
 
-        /* Убираем выделение текста при двойном клике на телефоне */
         * { -webkit-user-select: none; user-select: none; }
         input { -webkit-user-select: text; user-select: text; }
     </style>
@@ -183,6 +176,7 @@
 
     window.addRow = (type) => {
         const div = renderRow('', '', type);
+        // При добавлении новой строки сразу включаем редактирование суммы
         enableEdit(div.querySelector('input[type=number]'));
     };
 
@@ -191,16 +185,21 @@
         div.className = 'row';
         div.setAttribute('data-type', type);
         div.innerHTML = `
-            <input type="number" class="in-amt-${type}" value="${amt}" placeholder="0" readonly ondblclick="enableEdit(this)" onblur="disableEdit(this)" oninput="autoSave()" pattern="\d*">
-            <input type="text" class="in-comm" value="${comm}" placeholder="${type === 'plus' ? 'За что?' : 'Комментарий'}" readonly ondblclick="enableEdit(this)" onblur="disableEdit(this)" oninput="autoSave()">
+            <input type="number" class="in-amt-${type}" value="${amt}" placeholder="0" readonly onclick="enableEdit(this)" onblur="disableEdit(this)" oninput="autoSave()" pattern="\\d*">
+            <input type="text" class="in-comm" value="${comm}" placeholder="${type === 'plus' ? 'За что?' : 'Комментарий'}" readonly onclick="enableEdit(this)" onblur="disableEdit(this)" oninput="autoSave()">
             <button class="btn-del" onclick="this.parentElement.remove(); autoSave();">×</button>
         `;
         document.getElementById('list').appendChild(div);
         return div;
     }
 
-    window.enableEdit = (el) => { el.readOnly = false; el.focus(); };
-    window.disableEdit = (el) => { el.readOnly = true; };
+    window.enableEdit = (el) => { 
+        el.readOnly = false; 
+        el.focus(); 
+    };
+    window.disableEdit = (el) => { 
+        el.readOnly = true; 
+    };
 
     window.autoSave = () => {
         calculate();
