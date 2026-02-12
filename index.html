@@ -15,6 +15,9 @@
             --secondary: #95a5a6;
             --border: #f2f2f2;
             --modal-bg: #ffffff;
+            --edit-blue: #3498db;
+            --del-red: #e74c3c;
+            --save-green: #2ecc71;
         }
 
         body { 
@@ -51,8 +54,6 @@
             width: 100%;
         }
 
-        /* Чтобы инпуты не "прыгали" при включении редактирования */
-        input:read-only { cursor: default; }
         input:not(:read-only) { background: #f9f9f9; border-radius: 4px; padding-left: 5px; }
         
         .in-amt-minus { width: 85px !important; font-weight: 600; color: var(--minus); }
@@ -74,13 +75,15 @@
         .result-label { font-size: 1.1em; font-weight: 500; }
         .result-val { font-size: 2.8em; font-weight: 600; letter-spacing: -1px; }
 
-        .row-btns { display: flex; gap: 5px; }
+        .row-btns { display: flex; gap: 8px; }
         .btn-icon {
             width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;
-            background: none; border: none; cursor: pointer; font-size: 1.2em;
+            background: none; border: none; cursor: pointer; font-size: 1.3em;
+            transition: 0.2s;
         }
-        .btn-edit { color: #ccc; }
-        .btn-del { color: #eee; }
+        .btn-edit { color: var(--edit-blue); }
+        .btn-save-row { color: var(--save-green); }
+        .btn-del { color: var(--del-red); }
 
         .modal-overlay {
             position: fixed; inset: 0; background: var(--modal-bg); 
@@ -183,8 +186,8 @@
 
     window.addRow = (type) => {
         const div = renderRow('', '', type);
-        const amountInput = div.querySelector('input[type=number]');
-        enableEditRow(amountInput); // Сразу включаем редактирование при добавлении
+        const editBtn = div.querySelector('.btn-edit');
+        toggleEditRow(editBtn); // Авто-включение редактирования для новой строки
     };
 
     function renderRow(amt, comm, type) {
@@ -195,7 +198,7 @@
             <input type="number" class="in-amt-${type}" value="${amt}" placeholder="0" readonly oninput="autoSave()" pattern="\\d*">
             <input type="text" class="in-comm" value="${comm}" placeholder="${type === 'plus' ? 'За что?' : 'Комментарий'}" readonly oninput="autoSave()">
             <div class="row-btns">
-                <button class="btn-icon btn-edit" onclick="enableEditRow(this)">✎</button>
+                <button class="btn-icon btn-edit" onclick="toggleEditRow(this)">✎</button>
                 <button class="btn-icon btn-del" onclick="this.closest('.row').remove(); autoSave();">×</button>
             </div>
         `;
@@ -203,20 +206,23 @@
         return div;
     }
 
-    // Включает редактирование обоих инпутов в строке
-    window.enableEditRow = (btnOrInput) => {
-        const row = btnOrInput.closest('.row');
+    window.toggleEditRow = (btn) => {
+        const row = btn.closest('.row');
         const inputs = row.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.readOnly = false;
-            // Возвращаем в readonly при потере фокуса (blur)
-            input.onblur = () => { input.readOnly = true; };
-        });
-        // Фокус на тот элемент, который вызвал редактирование (или на первый инпут)
-        if (btnOrInput.tagName === 'INPUT') {
-            btnOrInput.focus();
-        } else {
+        const isEditing = btn.innerText === '✓';
+
+        if (!isEditing) {
+            // Включаем режим редактирования
+            inputs.forEach(input => input.readOnly = false);
+            btn.innerText = '✓';
+            btn.className = 'btn-icon btn-save-row';
             inputs[0].focus();
+        } else {
+            // Выключаем режим редактирования
+            inputs.forEach(input => input.readOnly = true);
+            btn.innerText = '✎';
+            btn.className = 'btn-icon btn-edit';
+            autoSave();
         }
     };
 
